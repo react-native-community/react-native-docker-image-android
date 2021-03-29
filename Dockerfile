@@ -6,8 +6,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # set default build arguments
 ARG SDK_VERSION=commandlinetools-linux-6609375_latest.zip
-ARG ANDROID_BUILD_VERSION=30
-ARG ANDROID_TOOLS_VERSION=30.0.3
+#ARG ANDROID_BUILD_VERSION=30
+#ARG ANDROID_TOOLS_VERSION=30.0.3
+ARG ANDROID_BUILD_VERSION=29
+ARG ANDROID_TOOLS_VERSION=29.0.3
 ARG BUCK_VERSION=2020.10.21.01
 ARG NDK_VERSION=20.1.5948944
 ARG NODE_VERSION=14.x
@@ -64,6 +66,12 @@ RUN curl -sS -L https://github.com/facebook/buck/releases/download/v${BUCK_VERSI
 
 # Full reference at https://dl.google.com/android/repository/repository2-1.xml
 # download and unpack android
+RUN echo "#!/bin/sh \n\
+echo "______________________________________________updating inotify ____________________________________" \n\
+echo fs.inotify.max_user_watches=524288 | tee -a /etc/sysctl.conf && sysctl -p\
+" >> /usr/local/bin/update-watch-fs.sh
+
+
 RUN curl -sS https://dl.google.com/android/repository/${SDK_VERSION} -o /tmp/sdk.zip \
     && mkdir -p ${ANDROID_HOME}/cmdline-tools \
     && unzip -q -d ${ANDROID_HOME}/cmdline-tools /tmp/sdk.zip \
@@ -77,3 +85,6 @@ RUN curl -sS https://dl.google.com/android/repository/${SDK_VERSION} -o /tmp/sdk
         "system-images;android-21;google_apis;armeabi-v7a" \
         "ndk;$NDK_VERSION" \
     && rm -rf ${ANDROID_HOME}/.android
+COPY build /usr/local/bin/build
+RUN chmod +x /usr/local/bin/update-watch-fs.sh
+ENTRYPOINT ["/usr/local/bin/build"]
